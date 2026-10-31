@@ -49,6 +49,25 @@
             </div>
         </div>
 
+        <!-- 出力形式選択 -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">■ 出力形式</label>
+            <div class="flex gap-6 flex-wrap">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="format" value="image/png" checked onchange="updateCombinedPreview()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300">
+                    <span class="ml-2 text-sm font-medium text-slate-700">PNG (標準)</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="format" value="image/jpeg" onchange="updateCombinedPreview()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300">
+                    <span class="ml-2 text-sm font-medium text-slate-700">JPEG</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="format" value="image/webp" onchange="updateCombinedPreview()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300">
+                    <span class="ml-2 text-sm font-medium text-slate-700">WebP</span>
+                </label>
+            </div>
+        </div>
+
         <!-- 画像選択＆プレビュー入力エリア -->
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div class="flex justify-between items-center mb-3">
@@ -241,6 +260,7 @@
         }
 
         const mode = document.querySelector('input[name="mode"]:checked').value;
+        const format = document.querySelector('input[name="format"]:checked').value;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
@@ -256,6 +276,12 @@
             canvas.width = newW1 + newW2;
             canvas.height = targetH;
 
+            // JPEGの場合は透明部分が黒くなるのを防ぐため白背景を敷く
+            if (format === 'image/jpeg') {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
             ctx.drawImage(imgData1, 0, 0, newW1, targetH);
             ctx.drawImage(imgData2, newW1, 0, newW2, targetH);
         } else {
@@ -266,6 +292,11 @@
 
             canvas.width = targetW;
             canvas.height = newH1 + newH2;
+
+            if (format === 'image/jpeg') {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
             ctx.drawImage(imgData1, 0, 0, targetW, newH1);
             ctx.drawImage(imgData2, 0, newH1, targetW, newH2);
@@ -282,12 +313,17 @@
             combinedPreview.src = url;
             combinedPreview.classList.remove('hidden');
             placeholder.classList.add('hidden');
-        }, 'image/png');
+        }, format, 0.95);
     }
 
     // ダウンロード実行
     function downloadImage() {
         if (!combinedBlob) return;
+
+        const format = document.querySelector('input[name="format"]:checked').value;
+        let ext = 'png';
+        if (format === 'image/jpeg') ext = 'jpg';
+        if (format === 'image/webp') ext = 'webp';
 
         const now = new Date();
         const yyyy = now.getFullYear();
@@ -296,7 +332,7 @@
         const hh = String(now.getHours()).padStart(2, '0');
         const min = String(now.getMinutes()).padStart(2, '0');
         const sec = String(now.getSeconds()).padStart(2, '0');
-        const filename = `combined_${yyyy}${mm}${dd}_${hh}${min}${sec}.png`;
+        const filename = `combined_${yyyy}${mm}${dd}_${hh}${min}${sec}.${ext}`;
 
         const url = URL.createObjectURL(combinedBlob);
         const a = document.createElement('a');
