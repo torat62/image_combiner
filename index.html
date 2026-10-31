@@ -3,191 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>画像結合ツール（スマホ対応）</title>
+    <title>画像結合ツール</title>
+    <!-- Tailwind CSS (スタイリング用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-            margin: 0;
-            padding: 15px;
-            box-sizing: border-box;
+        /* カスタムスタイルの追加 */
+        .preview-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-        h2 {
-            font-size: 1.2rem;
-            text-align: center;
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        .section {
-            margin-bottom: 15px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        .section-title {
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #475569;
-        }
-        .radio-group label {
-            margin-right: 15px;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        .preview-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .box {
-            flex: 1;
-            background: #e2e8f0;
-            border: 2px dashed #cbd5e1;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        .box img {
-            max-width: 100%;
-            max-height: 140px;
-            object-fit: contain;
-            border-radius: 4px;
-        }
-        .box input[type="file"] {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .box-label {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 5px;
-        }
-        .btn-swap {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        .btn-swap:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-        }
-        .btn-swap:hover:not(:disabled) {
-            background: #2563eb;
-        }
-        .btn-run {
-            width: 100%;
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-run:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-        }
-        .btn-run:hover:not(:disabled) {
-            background: #059669;
-        }
-        .status {
-            font-size: 0.85rem;
-            text-align: center;
-            margin-top: 10px;
-            color: #64748b;
+        /* チェッカーボード背景（透過画像の背景表示用） */
+        .checkerboard-bg {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen py-6 px-4">
 
-<div class="container">
-    <h2>画像結合ツール (Android / PC対応)</h2>
-
-    <!-- モード選択 -->
-    <div class="section">
-        <div class="section-title">■ 結合モード</div>
-        <div class="radio-group">
-            <label><input type="radio" name="mode" value="horizontal" checked onchange="updateLabels()"> 横結合</label>
-            <label><input type="radio" name="mode" value="vertical" onchange="updateLabels()"> 縦結合</label>
-        </div>
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+    <!-- ヘッダー -->
+    <div class="bg-slate-800 text-white py-4 px-6 text-center">
+        <h1 class="text-xl font-bold tracking-wide">画像結合ツール</h1>
+        <p class="text-xs text-slate-400 mt-1">2枚の画像を簡単に横または縦に結合します</p>
     </div>
 
-    <!-- プレビュー＆選択エリア -->
-    <div class="section">
-        <div class="section-title" id="preview-title">■ 画像1 (左) と 画像2 (右)</div>
-        <div class="preview-container">
-            <!-- 画像1 -->
-            <div class="box" id="box1" onclick="document.getElementById('file1').click()">
-                <span id="text1">＋ 画像1を選択</span>
-                <img id="preview1" style="display:none;">
-                <input type="file" id="file1" accept="image/jpeg, image/png, image/webp, image/bmp" onchange="handleFileSelect(event, 1)">
-            </div>
-
-            <!-- 入れ替えボタン -->
-            <button class="btn-swap" id="swapBtn" onclick="swapImages()" disabled>⇄<br>入<br>替</button>
-
-            <!-- 画像2 -->
-            <div class="box" id="box2" onclick="document.getElementById('file2').click()">
-                <span id="text2">＋ 画像2を選択</span>
-                <img id="preview2" style="display:none;">
-                <input type="file" id="file2" accept="image/jpeg, image/png, image/webp, image/bmp" onchange="handleFileSelect(event, 2)">
+    <div class="p-6 space-y-6">
+        <!-- モード選択 -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">■ 結合モード</label>
+            <div class="flex gap-6">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="mode" value="horizontal" checked onchange="handleLayoutChange()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300">
+                    <span class="ml-2 text-sm font-medium text-slate-700">横結合 (左右に並べる)</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="mode" value="vertical" onchange="handleLayoutChange()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300">
+                    <span class="ml-2 text-sm font-medium text-slate-700">縦結合 (上下に並べる)</span>
+                </label>
             </div>
         </div>
-    </div>
 
-    <!-- 実行ボタン -->
-    <button class="btn-run" id="runBtn" onclick="processImages()" disabled>結合してダウンロード（日付＋秒）</button>
-    <div class="status" id="statusText">画像を2枚選択してください</div>
+        <!-- 画像選択＆プレビュー入力エリア -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider" id="preview-title">■ 画像1 (左) と 画像2 (右)</span>
+                <span class="text-xs text-slate-400">クリックして画像を選択</span>
+            </div>
+
+            <!-- レイアウト切替対象のコンテナ -->
+            <div id="previewContainer" class="preview-transition flex flex-col md:flex-row gap-3 items-center justify-between">
+                <!-- 画像1 -->
+                <div class="w-full flex-1 min-h-[140px] bg-slate-200 hover:bg-slate-300/70 transition border-2 border-dashed border-slate-300 rounded-xl p-3 text-center flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group" onclick="document.getElementById('file1').click()">
+                    <span id="text1" class="text-xs font-medium text-slate-500 group-hover:text-slate-700">＋ 画像1を選択</span>
+                    <img id="preview1" class="max-w-full max-h-[150px] object-contain rounded hidden" alt="画像1プレビュー">
+                    <input type="file" id="file1" accept="image/jpeg, image/png, image/webp, image/gif, image/bmp" class="hidden" onchange="handleFileSelect(event, 1)">
+                </div>
+
+                <!-- 入れ替えボタン -->
+                <button type="button" id="swapBtn" onclick="swapImages()" disabled class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-400 shrink-0 shadow-sm">
+                    <span id="swapIcon">⇄</span>
+                    <span id="swapText">入替</span>
+                </button>
+
+                <!-- 画像2 -->
+                <div class="w-full flex-1 min-h-[140px] bg-slate-200 hover:bg-slate-300/70 transition border-2 border-dashed border-slate-300 rounded-xl p-3 text-center flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group" onclick="document.getElementById('file2').click()">
+                    <span id="text2" class="text-xs font-medium text-slate-500 group-hover:text-slate-700">＋ 画像2を選択</span>
+                    <img id="preview2" class="max-w-full max-h-[150px] object-contain rounded hidden" alt="画像2プレビュー">
+                    <input type="file" id="file2" accept="image/jpeg, image/png, image/webp, image/gif, image/bmp" class="hidden" onchange="handleFileSelect(event, 2)">
+                </div>
+            </div>
+        </div>
+
+        <!-- 結合後のリアルタイムプレビューエリア -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">■ 結合結果プレビュー</span>
+                <span id="dimensionBadge" class="text-xs font-mono bg-slate-200 text-slate-600 py-0.5 px-2 rounded hidden">0 x 0 px</span>
+            </div>
+
+            <div class="w-full min-h-[180px] max-h-[350px] rounded-xl border border-slate-300 checkerboard-bg flex items-center justify-center p-3 overflow-auto relative">
+                <!-- 初期案内表示 -->
+                <div id="combinedPlaceholder" class="text-center text-slate-400 text-xs">
+                    <p>画像を2枚選択すると、ここに結合結果が表示されます</p>
+                </div>
+                <!-- 結合結果の画像表示要素 -->
+                <img id="combinedPreview" class="max-w-full max-h-[320px] object-contain rounded shadow-sm hidden" alt="結合後の画像">
+            </div>
+        </div>
+
+        <!-- アクションエリア -->
+        <div class="space-y-2">
+            <button type="button" id="runBtn" onclick="downloadImage()" disabled class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none">
+                結合画像をダウンロード
+            </button>
+            <p class="text-xs text-center text-slate-500" id="statusText">2枚の画像を選択してください</p>
+        </div>
+    </div>
 </div>
 
 <script>
+    // 状態管理
     let imgData1 = null;
     let imgData2 = null;
-    let fileObj1 = null;
-    let fileObj2 = null;
+    let combinedBlob = null;
 
-    function updateLabels() {
+    // モード切り替え時（横 / 縦）
+    function handleLayoutChange() {
         const mode = document.querySelector('input[name="mode"]:checked').value;
         const title = document.getElementById('preview-title');
+        const container = document.getElementById('previewContainer');
+        const swapIcon = document.getElementById('swapIcon');
+
         if (mode === 'horizontal') {
-            title.innerText = '■ 画像1 (左側) と 画像2 (右側)';
+            title.innerText = '■ 画像1 (左) と 画像2 (右)';
+            container.className = 'preview-transition flex flex-col md:flex-row gap-3 items-center justify-between';
+            swapIcon.innerText = '⇄';
         } else {
-            title.innerText = '■ 画像1 (上側) と 画像2 (下側)';
+            title.innerText = '■ 画像1 (上) と 画像2 (下)';
+            container.className = 'preview-transition flex flex-col gap-3 items-center justify-between';
+            swapIcon.innerText = '⇅';
         }
+
+        // モード切替時にリアルタイムプレビューを更新
+        updateCombinedPreview();
     }
 
+    // ファイル選択ハンドラ
     function handleFileSelect(event, index) {
         const file = event.target.files[0];
         if (!file) return;
@@ -198,61 +145,100 @@
             img.onload = function() {
                 if (index === 1) {
                     imgData1 = img;
-                    fileObj1 = file;
                     document.getElementById('preview1').src = e.target.result;
-                    document.getElementById('preview1').style.display = 'block';
-                    document.getElementById('text1').style.display = 'none';
+                    document.getElementById('preview1').classList.remove('hidden');
+                    document.getElementById('text1').classList.add('hidden');
                 } else {
                     imgData2 = img;
-                    fileObj2 = file;
                     document.getElementById('preview2').src = e.target.result;
-                    document.getElementById('preview2').style.display = 'block';
-                    document.getElementById('text2').style.display = 'none';
+                    document.getElementById('preview2').classList.remove('hidden');
+                    document.getElementById('text2').classList.add('hidden');
                 }
                 checkReady();
+                updateCombinedPreview();
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
+    // 画像1と画像2の入れ替え
     function swapImages() {
-        const tempImg = imgData1;
-        const tempFile = fileObj1;
-        imgData1 = imgData2;
-        fileObj1 = fileObj2;
-        imgData2 = tempImg;
-        fileObj2 = tempFile;
+        if (!imgData1 && !imgData2) return;
 
-        // プレビューの入れ替え
+        // データ入れ替え
+        const tempImg = imgData1;
+        imgData1 = imgData2;
+        imgData2 = tempImg;
+
+        // UI表示の更新
         const prev1 = document.getElementById('preview1');
         const prev2 = document.getElementById('preview2');
         const text1 = document.getElementById('text1');
         const text2 = document.getElementById('text2');
 
-        const srcTemp = prev1.src;
-        const dispTemp = prev1.style.display;
-        const textDispTemp = text1.style.display;
+        const src1 = prev1.src;
+        const src2 = prev2.src;
+        const isHidden1 = prev1.classList.contains('hidden');
+        const isHidden2 = prev2.classList.contains('hidden');
 
-        prev1.src = prev2.src;
-        prev1.style.display = prev2.style.display;
-        text1.style.display = text2.style.display;
+        prev1.src = src2;
+        prev2.src = src1;
 
-        prev2.src = srcTemp;
-        prev2.style.display = dispTemp;
-        text2.style.display = textDispTemp;
+        if (isHidden2) {
+            prev1.classList.add('hidden');
+            text1.classList.remove('hidden');
+        } else {
+            prev1.classList.remove('hidden');
+            text1.classList.add('hidden');
+        }
+
+        if (isHidden1) {
+            prev2.classList.add('hidden');
+            text2.classList.remove('hidden');
+        } else {
+            prev2.classList.remove('hidden');
+            text2.classList.add('hidden');
+        }
+
+        updateCombinedPreview();
     }
 
+    // 準備状態の判定
     function checkReady() {
+        const swapBtn = document.getElementById('swapBtn');
+        const runBtn = document.getElementById('runBtn');
+        const statusText = document.getElementById('statusText');
+
+        if (imgData1 || imgData2) {
+            swapBtn.removeAttribute('disabled');
+        } else {
+            swapBtn.setAttribute('disabled', 'true');
+        }
+
         if (imgData1 && imgData2) {
-            document.getElementById('swapBtn').removeAttribute('disabled');
-            document.getElementById('runBtn').removeAttribute('disabled');
-            document.getElementById('statusText').innerText = '準備完了！結合ボタンを押してください';
+            runBtn.removeAttribute('disabled');
+            statusText.innerText = '準備完了！結合画像をダウンロードできます';
+        } else {
+            runBtn.setAttribute('disabled', 'true');
+            statusText.innerText = '2枚の画像を選択してください';
         }
     }
 
-    function processImages() {
-        if (!imgData1 || !imgData2) return;
+    // リアルタイムで画像をCanvas結合し、プレビュー更新
+    function updateCombinedPreview() {
+        const placeholder = document.getElementById('combinedPlaceholder');
+        const combinedPreview = document.getElementById('combinedPreview');
+        const dimensionBadge = document.getElementById('dimensionBadge');
+
+        // 2枚そろっていない場合はプレビュー消去
+        if (!imgData1 || !imgData2) {
+            placeholder.classList.remove('hidden');
+            combinedPreview.classList.add('hidden');
+            dimensionBadge.classList.add('hidden');
+            combinedBlob = null;
+            return;
+        }
 
         const mode = document.querySelector('input[name="mode"]:checked').value;
         const canvas = document.createElement('canvas');
@@ -262,7 +248,7 @@
         let w2 = imgData2.width, h2 = imgData2.height;
 
         if (mode === 'horizontal') {
-            // 横結合：縦の低い方に合わせる
+            // 横結合：高さの低い方にリサイズして合わせる
             let targetH = Math.min(h1, h2);
             let newW1 = Math.round(w1 * (targetH / h1));
             let newW2 = Math.round(w2 * (targetH / h2));
@@ -273,7 +259,7 @@
             ctx.drawImage(imgData1, 0, 0, newW1, targetH);
             ctx.drawImage(imgData2, newW1, 0, newW2, targetH);
         } else {
-            // 縦結合：横の低い方に合わせる
+            // 縦結合：幅の低い方にリサイズして合わせる
             let targetW = Math.min(w1, w2);
             let newH1 = Math.round(h1 * (targetW / w1));
             let newH2 = Math.round(h2 * (targetW / w2));
@@ -285,7 +271,24 @@
             ctx.drawImage(imgData2, 0, newH1, targetW, newH2);
         }
 
-        // ファイル名を生成 (combined_YYYYMMDD_HHMMSS.png)
+        // サイズバッジの更新
+        dimensionBadge.innerText = `${canvas.width} x ${canvas.height} px`;
+        dimensionBadge.classList.remove('hidden');
+
+        // Blob化してプレビューimg要素へ設定
+        canvas.toBlob(function(blob) {
+            combinedBlob = blob;
+            const url = URL.createObjectURL(blob);
+            combinedPreview.src = url;
+            combinedPreview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+        }, 'image/png');
+    }
+
+    // ダウンロード実行
+    function downloadImage() {
+        if (!combinedBlob) return;
+
         const now = new Date();
         const yyyy = now.getFullYear();
         const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -295,21 +298,17 @@
         const sec = String(now.getSeconds()).padStart(2, '0');
         const filename = `combined_${yyyy}${mm}${dd}_${hh}${min}${sec}.png`;
 
-        // ダウンロード実行
-        canvas.toBlob(function(blob) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(combinedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-            document.getElementById('statusText').innerText = `保存完了: ${filename}`;
-        }, 'image/png');
+        document.getElementById('statusText').innerText = `保存完了: ${filename}`;
     }
 </script>
-
 </body>
 </html>
